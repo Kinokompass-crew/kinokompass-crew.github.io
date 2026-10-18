@@ -184,7 +184,7 @@ function renderFriendsSetup(p) {
       <label class="lbl">Gemeinsames Repo (Organisation/Name)<input id="frRepo" class="input" placeholder="Organisation/Name" value="${esc(fr.repo || 'Kinokompass-crew/daten')}" autocomplete="off" spellcheck="false"></label>
       <label class="lbl">Dein Token für dieses Repo<input id="frTok" class="input" placeholder="${frToken ? '•••• eingetragen – neuen einfügen' : 'github_pat_…'}" autocomplete="off" spellcheck="false"></label>
       <label class="lbl">Welches Profil teilst du?<select id="frProf" class="input">${liveProfiles().map(x => `<option value="${x.id}" ${x.id === (fr.shareProfile || profiles.current) ? 'selected' : ''}>${x.emoji} ${esc(x.name)}</option>`).join('')}</select></label>
-      <label class="switch-row"><input type="checkbox" id="frAsSync" ${!syncCfg.token || (syncCfg.repo !== 'ClaudeWorkspace' && syncCfg.owner + '/' + syncCfg.repo === fr.repo) ? 'checked' : ''}><span>Dieses Repo auch als <b>Geräte-Sync</b> nutzen (für Freunde ohne eigenen Workspace – nicht bei dir)</span></label>
+      <label class="switch-row"><input type="checkbox" id="frAsSync" ${!syncCfg.token || syncCfg.repo !== 'ClaudeWorkspace' ? 'checked' : ''}><span>Dieses Repo auch als <b>Geräte-Sync</b> nutzen (für Freunde ohne eigenen Workspace – nicht bei dir)</span></label>
       <p class="small error" id="frErr" hidden></p>
       <button class="btn primary wide" data-fr="connect">Verbinden</button>
       ${frReady() ? '<button class="btn ghost danger wide" data-fr="disconnect">Verbindung trennen</button>' : ''}
@@ -270,7 +270,7 @@ function renderFriendsTab(el) {
   const tellThem = friends.flatMap(f => Object.values(f.watch || {}).filter(w => data.films[w.key]?.note >= 8).map(w => ({ f, w }))).slice(0, 10);
   const feed = friends.flatMap(f => Object.values(f.films || {}).map(x => ({ f, x }))).sort((a, b) => (b.x.ts || 0) - (a.x.ts || 0));
   el.innerHTML = `
-    <div class="who-line">👤 Angemeldet als <b>@${esc(fr.login)}</b><button class="mini ghost" data-fr="disconnect">Abmelden</button></div>
+    <div class="who-line">👤 Angemeldet als <b>@${esc(fr.login)}</b>${liveProfiles().length > 1 ? ' <span>(gilt für alle Profile auf diesem Gerät)</span>' : ''}<button class="mini ghost" data-fr="disconnect">Abmelden</button></div>
     <div class="fr-strip">${friends.map(f => { const ag = agreement(f); return `<button class="fr-chip" data-fr="friend" data-v="${esc(f.login)}"><span class="fr-chip-e">${f.emoji || '🙂'}</span><span>${esc(f.name || f.login)}</span><span class="muted small">${ag.pct != null ? ag.pct + ' % einig' : Object.keys(f.films || {}).length + ' Bew.'}</span></button>`; }).join('')}
       <button class="fr-chip add" data-fr="open"><span class="fr-chip-e">＋</span><span>Einladen</span><span class="muted small">&nbsp;</span></button></div>
     ${newInbox().length ? inboxCard() : ''}
@@ -344,6 +344,13 @@ document.addEventListener('click', async e => {
     }
     case 'disconnect': {
       if (!confirm('Verbindung zu den Freunden trennen? Deine geteilten Bewertungen bleiben im gemeinsamen Repo.')) return;
+      const syncViaFriends = fr.repo && `${syncCfg.owner}/${syncCfg.repo}` === fr.repo;
+      if (syncViaFriends) { // lief der Geräte-Sync über dieselbe Verbindung? Dann vorige Einstellung zurück bzw. leeren
+        let prev = null; try { prev = JSON.parse(localStorage.getItem('kino.sync.prev')); } catch (_) { }
+        if (prev?.token) { Object.assign(syncCfg, prev, { last: 0 }); await setToken(prev.token); localStorage.removeItem('kino.sync.prev'); }
+        else { Object.assign(syncCfg, { owner: '', repo: '', path: '', last: 0 }); await setToken(''); }
+        saveSyncCfg();
+      }
       await setFrToken(''); Object.assign(fr, { repo: '', login: '', members: [], data: {}, inbox: [], reactions: [], mentions: [] }); saveFr(); updateFriendBadge();
       toast('Abgemeldet – jetzt mit deinem eigenen Token verbinden');
       if (p?.fr) return renderFriendsSetup(p); // auf der Freunde-Seite: gleich das Formular zeigen
