@@ -189,7 +189,7 @@ function searchSuggestHtml() {
 /* ─── Update-Hinweis (Android) ─── */
 async function checkUpdate() {
   const App = window.Capacitor?.Plugins?.App; if (!App || !isNative()) return;
-  const last = +(localStorage.getItem('kino.upd.last') || 0); if (Date.now() - last < 6 * 3600e3) return;
+  const last = +(localStorage.getItem('kino.upd.last') || 0); if (Date.now() - last < 30 * 60e3) return; // höchstens alle 30 Minuten
   localStorage.setItem('kino.upd.last', String(Date.now()));
   try {
     const info = await App.getInfo(), mine = +info.build || 0;
@@ -197,7 +197,16 @@ async function checkUpdate() {
     if (frReady()) rel = await fgh(`/repos/${fr.repo}/releases/tags/app-latest`).catch(() => null);
     if (!rel && syncReady()) rel = await gh(`/repos/Brownyay/ClaudeWorkspace/releases/tags/kinokompass-latest`).catch(() => null);
     const n = +((rel?.body || '').match(/Build (\d+)/)?.[1] || 0);
-    if (n > mine) { localStorage.setItem('kino.upd.avail', JSON.stringify({ n, url: rel.html_url })); if (view === 'fuerdich' && !pages.length) render(); }
+    if (n > mine) {
+      localStorage.setItem('kino.upd.avail', JSON.stringify({ n, url: rel.html_url }));
+      if (view === 'fuerdich' && !pages.length) render();
+      // einmal je neuer Version auch als Benachrichtigung (Mitteilungszentrale)
+      if (+(localStorage.getItem('kino.upd.notified') || 0) < n) {
+        localStorage.setItem('kino.upd.notified', String(n));
+        const LNp = window.Capacitor?.Plugins?.LocalNotifications;
+        try { await LNp?.schedule({ notifications: [{ id: 900000 + (n % 10000), title: 'Kinokompass', body: `⬆️ Neue Version verfügbar (Build ${n}) – antippen und in der App auf den grünen Hinweis tippen.` }] }); } catch (_) { }
+      }
+    }
     else localStorage.removeItem('kino.upd.avail');
   } catch (_) { }
 }
@@ -237,6 +246,7 @@ document.addEventListener('click', async e => {
 function toolsBoot() {
   setTimeout(() => autoBackup(), 10000);
   setTimeout(() => checkUpdate(), 6000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); }); // auch beim Zurückkehren in die App
 }
 
 /* ─── Tastenkürzel (Mac/Browser): / = Suche, 1–6 = Tabs, n = neu mischen, Esc = zurück (app.js) ─── */
