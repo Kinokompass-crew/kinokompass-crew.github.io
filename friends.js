@@ -119,7 +119,9 @@ async function inboxRemove(id) {
 }
 
 /* ─── Auswertungen ─── */
-const friendList = () => fr.members.filter(x => x.login !== fr.login).map(x => ({ ...x, ...(fr.data[x.login] || {}), login: x.login }));
+// Heißt ein Freund noch „Ich“ (Standardname), zeigen wir seinen GitHub-Namen – sonst steht bei dir „Ich“ für jemand anderen
+const GENERIC_NAMES = /^(ich|me|profil|user|nutzer)$/i;
+const friendList = () => fr.members.filter(x => x.login !== fr.login).map(x => { const f = { ...x, ...(fr.data[x.login] || {}), login: x.login }; if (!f.name || GENERIC_NAMES.test(f.name.trim())) f.name = x.login; return f; });
 // Einigkeit: bei gemeinsam bewerteten Titeln, 100 % = immer gleiche Note, je Punkt Abstand −10 %
 function agreement(f) {
   const common = Object.values(f.films || {}).filter(x => data.films[x.key]?.note);
@@ -183,6 +185,7 @@ function renderFriendsSetup(p) {
       <p class="small">Ihr seht gegenseitig eure Bewertungen, könnt euch Filme und Serien empfehlen und beim Filmabend gemeinsam suchen. Dafür gibt es einen <b>eigenen privaten Speicher</b> auf GitHub – getrennt von allem anderen. Jeder hat einen Schlüssel nur dafür.</p>
       <label class="lbl">Gemeinsames Repo (Organisation/Name)<input id="frRepo" class="input" placeholder="Organisation/Name" value="${esc(fr.repo || 'Kinokompass-crew/daten')}" autocomplete="off" spellcheck="false"></label>
       <label class="lbl">Dein Token für dieses Repo<input id="frTok" class="input" placeholder="${frToken ? '•••• eingetragen – neuen einfügen' : 'github_pat_…'}" autocomplete="off" spellcheck="false"></label>
+      <label class="lbl">Dein Name für Freunde<input id="frName" class="input" maxlength="20" placeholder="z. B. Finn" value="${esc(GENERIC_NAMES.test(curProfile().name) ? '' : curProfile().name)}" autocomplete="off"></label>
       <label class="lbl">Welches Profil teilst du?<select id="frProf" class="input">${liveProfiles().map(x => `<option value="${x.id}" ${x.id === (fr.shareProfile || profiles.current) ? 'selected' : ''}>${x.emoji} ${esc(x.name)}</option>`).join('')}</select></label>
       <label class="switch-row"><input type="checkbox" id="frAsSync" ${!syncCfg.token || syncCfg.repo !== 'ClaudeWorkspace' ? 'checked' : ''}><span>Dieses Repo auch als <b>Geräte-Sync</b> nutzen (für Freunde ohne eigenen Workspace – nicht bei dir)</span></label>
       <p class="small error" id="frErr" hidden></p>
@@ -328,6 +331,10 @@ document.addEventListener('click', async e => {
         const me = await fgh('/user'); if (!me?.login) throw new Error('Token ungültig');
         const r = await fgh(`/repos/${repo}`); if (!r) throw new Error('Repo nicht gefunden oder kein Zugriff – Token-Rechte prüfen');
         fr.repo = repo; fr.login = me.login; fr.shareProfile = $('#frProf', p.body)?.value || profiles.current; saveFr();
+        // Name für Freunde → Profil umbenennen (sonst sehen alle „Ich“)
+        const nm = ($('#frName', p.body)?.value || '').trim(), sp = profiles.list.find(x => x.id === fr.shareProfile);
+        if (sp && nm && nm !== sp.name) { sp.name = nm; sp.ts = Date.now(); saveProfiles(); updateAvatar(); }
+        else if (sp && GENERIC_NAMES.test(sp.name)) { sp.name = me.login; sp.ts = Date.now(); saveProfiles(); updateAvatar(); }
         if ($('#frAsSync', p.body)?.checked) { // Freund ohne Workspace: Geräte-Sync ins gemeinsame Repo
           const [owner, name] = repo.split('/');
           if (syncCfg.repo === 'ClaudeWorkspace' && syncCfg.token) try { localStorage.setItem('kino.sync.prev', JSON.stringify(syncCfg)); } catch (_) { } // für „Zurück auf meinen Workspace“
