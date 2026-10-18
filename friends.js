@@ -273,7 +273,7 @@ function renderFriendsTab(el) {
   const tellThem = friends.flatMap(f => Object.values(f.watch || {}).filter(w => data.films[w.key]?.note >= 8).map(w => ({ f, w }))).slice(0, 10);
   const feed = friends.flatMap(f => Object.values(f.films || {}).map(x => ({ f, x }))).sort((a, b) => (b.x.ts || 0) - (a.x.ts || 0));
   el.innerHTML = `
-    <div class="who-line">👤 Angemeldet als <b>@${esc(fr.login)}</b>${liveProfiles().length > 1 ? ' <span>(gilt für alle Profile auf diesem Gerät)</span>' : ''}<button class="mini ghost" data-fr="disconnect">Abmelden</button></div>
+    <div class="who-line">👤 Angemeldet als <b>@${esc(fr.login)}</b>${liveProfiles().length > 1 ? ' <span>(gilt für alle Profile auf diesem Gerät)</span>' : ''}<button class="mini" data-fr="sync" aria-label="Jetzt abgleichen">🔄</button><button class="mini ghost" data-fr="disconnect">Abmelden</button></div>
     <div class="fr-strip">${friends.map(f => { const ag = agreement(f); return `<button class="fr-chip" data-fr="friend" data-v="${esc(f.login)}"><span class="fr-chip-e">${f.emoji || '🙂'}</span><span>${esc(f.name || f.login)}</span><span class="muted small">${ag.pct != null ? ag.pct + ' % einig' : Object.keys(f.films || {}).length + ' Bew.'}</span></button>`; }).join('')}
       <button class="fr-chip add" data-fr="open"><span class="fr-chip-e">＋</span><span>Einladen</span><span class="muted small">&nbsp;</span></button></div>
     ${newInbox().length ? inboxCard() : ''}
