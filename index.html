@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://image.tmdb.org; connect-src https://api.themoviedb.org https://api.github.com https://www.omdbapi.com; frame-src https://www.youtube-nocookie.com; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#101014">
+  <title>Kinokompass</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
+  <link rel="icon" href="icon.png">
+  <!-- Web-App (iPhone/Android über den Browser): Manifest, Home-Bildschirm-Symbol, Vollbild -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kinokompass">
+</head>
+<body>
+  <div id="splash"><div class="sp-glow"></div><img class="sp-logo" src="icon.png" alt=""><div class="sp-name">Kinokompass</div><div class="sp-sub">Dein Film-Kompass</div></div>
+  <header class="topbar">
+    <img class="logo" src="icon.png" alt="">
+    <h1 id="title">Kinokompass</h1>
+    <button class="iconbtn" data-act="settings" aria-label="Einstellungen">⚙️</button>
+  </header>
+  <main id="view" class="view"></main>
+  <nav id="tabs" class="tabbar"></nav>
+  <div id="pages"></div>
+  <script src="vendor/qrcode.js"></script>
+  <script src="vendor/jsQR.js"></script>
+  <script src="logic.js"></script>
+  <script src="tmdb.js"></script>
+  <script src="sync.js"></script>
+  <script src="app.js"></script>
+  <script src="extras.js"></script>
+  <script src="netflix.js"></script>
+  <script src="kinojahr.js"></script>
+  <script src="profiles.js"></script>
+  <script src="kalender.js"></script>
+  <script src="smart.js"></script>
+  <script src="friends.js"></script>
+  <script src="people.js"></script>
+  <script src="planer.js"></script>
+  <script src="chat.js"></script>
+  <script src="games.js"></script>
+  <script src="tools.js"></script>
+  <script src="pwa.js"></script>
+</body>
+</html>
