@@ -342,7 +342,7 @@ function renderSetupKey(el) {
     <h2>Willkommen bei Kinokompass 🎬</h2>
     <p>Für Suche, Cover, Bewertungen und Streaming-Infos nutzt die App die kostenlose Datenbank <b>TMDB</b>. Dafür brauchst du einmalig einen eigenen Schlüssel:</p>
     <ol>
-      <li>Auf <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> anmelden.</li>
+      <li>Kostenlos registrieren auf <a href="https://www.themoviedb.org/signup" target="_blank" rel="noopener">themoviedb.org/signup</a> (E-Mail bestätigen) und dann <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> öffnen → API-Schlüssel anfordern (Typ „Developer“, privat).</li>
       <li>Dort steht dein <b>API-Schlüssel</b> (kurz) und das <b>Lesezugriffstoken</b> (lang). Einen davon kopieren.</li>
       <li>Hier einfügen. Tipp: Am Mac in Kinokompass unter ⚙️ → „Anzeigen“ findest du ihn auch.</li>
     </ol>
