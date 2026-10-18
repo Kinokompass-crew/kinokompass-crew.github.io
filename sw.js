@@ -4,7 +4,7 @@
    Filmdatenbank-Antworten: erst Netz, ohne Netz die letzte gespeicherte Antwort.
    GitHub/OMDb: immer direkt (Sync und Schlüssel werden nie zwischengespeichert).
    VERSION wird beim Veröffentlichen durch den Commit ersetzt → neue Version = neuer Speicher. */
-const VERSION = 'faadb8a71f';
+const VERSION = 'b6969fe055';
 const APP = 'kk-app-' + VERSION, IMG = 'kk-img', API = 'kk-api';
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(APP).then(c => c.addAll(['./', './index.html', './styles.css', './icon.png'])).catch(() => { })); });

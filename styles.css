@@ -689,3 +689,4 @@ code { font-size: 12px; background: var(--bg2); padding: 1px 5px; border-radius:
 .pwa-hint { border-color: rgba(56, 189, 248, .45); } .pwa-hint b { color: #7dd3fc; } :root[data-theme="light"] .pwa-hint b { color: #0369a1; }
 button.upd { width: 100%; text-align: left; }
 .who-am-i { font-size: 13px; border-color: rgba(56, 189, 248, .4); }
+.who-line { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: -4px 0 10px; } .who-line b { color: var(--text); } .who-line .mini { margin-left: auto; }

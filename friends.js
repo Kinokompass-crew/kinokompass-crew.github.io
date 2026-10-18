@@ -270,6 +270,7 @@ function renderFriendsTab(el) {
   const tellThem = friends.flatMap(f => Object.values(f.watch || {}).filter(w => data.films[w.key]?.note >= 8).map(w => ({ f, w }))).slice(0, 10);
   const feed = friends.flatMap(f => Object.values(f.films || {}).map(x => ({ f, x }))).sort((a, b) => (b.x.ts || 0) - (a.x.ts || 0));
   el.innerHTML = `
+    <div class="who-line">👤 Angemeldet als <b>@${esc(fr.login)}</b><button class="mini ghost" data-fr="disconnect">Abmelden</button></div>
     <div class="fr-strip">${friends.map(f => { const ag = agreement(f); return `<button class="fr-chip" data-fr="friend" data-v="${esc(f.login)}"><span class="fr-chip-e">${f.emoji || '🙂'}</span><span>${esc(f.name || f.login)}</span><span class="muted small">${ag.pct != null ? ag.pct + ' % einig' : Object.keys(f.films || {}).length + ' Bew.'}</span></button>`; }).join('')}
       <button class="fr-chip add" data-fr="open"><span class="fr-chip-e">＋</span><span>Einladen</span><span class="muted small">&nbsp;</span></button></div>
     ${newInbox().length ? inboxCard() : ''}
@@ -343,7 +344,10 @@ document.addEventListener('click', async e => {
     }
     case 'disconnect': {
       if (!confirm('Verbindung zu den Freunden trennen? Deine geteilten Bewertungen bleiben im gemeinsamen Repo.')) return;
-      await setFrToken(''); Object.assign(fr, { repo: '', login: '', members: [], data: {}, inbox: [] }); saveFr(); return renderFriendsSetup(p);
+      await setFrToken(''); Object.assign(fr, { repo: '', login: '', members: [], data: {}, inbox: [], reactions: [], mentions: [] }); saveFr(); updateFriendBadge();
+      toast('Abgemeldet – jetzt mit deinem eigenen Token verbinden');
+      if (p?.fr) return renderFriendsSetup(p); // auf der Freunde-Seite: gleich das Formular zeigen
+      closeAllPages(); return openFriends(); // im Freunde-Tab: Formular öffnen
     }
   }
 });
