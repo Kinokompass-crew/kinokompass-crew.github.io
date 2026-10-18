@@ -157,7 +157,8 @@ function renderFriends(p) {
   const inbox = fr.inbox, friends = friendList();
   fr.seenInbox = Date.now(); saveFr();
   p.body.innerHTML = `<div class="fr">
-    <p class="small muted">Du bist <b>@${esc(fr.login)}</b> und teilst das Profil <b>${esc((profiles.list.find(x => x.id === fr.shareProfile) || curProfile()).emoji)} ${esc((profiles.list.find(x => x.id === fr.shareProfile) || curProfile()).name)}</b>. ${fr.last ? 'Abgeglichen ' + new Date(fr.last).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}${fr.err ? ` · <span class="error">⚠️ ${esc(fr.err)}</span>` : ''}</p>
+    <div class="card who-am-i">👤 Angemeldet als <b>@${esc(fr.login)}</b> – das ist das GitHub-Konto des eingetragenen Tokens. <span class="muted">Nicht dein Konto? Unten auf „⚙️ Einstellungen“ → „Verbindung trennen“ und mit deinem eigenen Token neu verbinden.</span></div>
+    <p class="small muted">Du teilst das Profil <b>${esc((profiles.list.find(x => x.id === fr.shareProfile) || curProfile()).emoji)} ${esc((profiles.list.find(x => x.id === fr.shareProfile) || curProfile()).name)}</b>. ${fr.last ? 'Abgeglichen ' + new Date(fr.last).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}${fr.err ? ` · <span class="error">⚠️ ${esc(fr.err)}</span>` : ''}</p>
     ${inbox.length ? `<h3 class="sec">📨 Empfehlungen an dich</h3>${inbox.map(a => `<div class="card fr-rec"><div class="fr-rec-main" data-open="${a.key}">${posterImg(a, 'w92')}<div><div class="small muted">${esc(a.fromEmoji || '🙂')} ${esc(a.fromName || a.from)} · ${new Date(a.ts).toLocaleDateString('de-DE')}</div><b>${esc(a.title)}</b> <span class="muted small">${a.kind === 'tv' ? 'Serie' : 'Film'}${a.year ? ' · ' + a.year : ''}</span>${a.text ? `<div class="mycomment small">„${esc(a.text)}“</div>` : ''}<div class="avail" data-avail="${a.key}"></div></div></div>
       <div class="rec-acts">${data.films[a.key] ? `<span class="note ${noteClass(data.films[a.key].note)}">Du: ${data.films[a.key].note}</span>` : `<button class="mini" data-act="watch" data-key="${a.key}">🔖 Merken</button><button class="mini" data-act="rate" data-key="${a.key}">✔ Gesehen</button>`}<button class="mini ghost" data-fr="done" data-v="${a.id}">Erledigt</button></div></div>`).join('')}` : ''}
     <h3 class="sec">Deine Freunde</h3>
@@ -327,10 +328,12 @@ document.addEventListener('click', async e => {
         fr.repo = repo; fr.login = me.login; fr.shareProfile = $('#frProf', p.body)?.value || profiles.current; saveFr();
         if ($('#frAsSync', p.body)?.checked) { // Freund ohne Workspace: Geräte-Sync ins gemeinsame Repo
           const [owner, name] = repo.split('/');
+          if (syncCfg.repo === 'ClaudeWorkspace' && syncCfg.token) try { localStorage.setItem('kino.sync.prev', JSON.stringify(syncCfg)); } catch (_) { } // für „Zurück auf meinen Workspace“
           Object.assign(syncCfg, { owner, repo: name, branch: 'main', path: `${me.login}/privat/filme.json` });
           await setToken(frToken); saveSyncCfg(); syncNow(true);
         }
         await friendsSync(false); toast(`Verbunden als @${me.login} ✓`); renderFriends(p);
+        if (fr.members.some(m => m.login === me.login && m.name && m.name !== shareExport().name)) toast(`Hinweis: @${me.login} ist schon als „${fr.members.find(m => m.login === me.login).name}“ verbunden – benutzt hier jemand einen fremden Token?`);
       } catch (err) {
         const msg = err.status === 401 ? 'Token ungültig oder abgelaufen – bitte neu erstellen.' : err.status === 403 ? 'Token hat keine Berechtigung – Contents „Read and write“ für das Repo setzen bzw. in der Organisation freigeben.' : err.message;
         showErr('Verbinden fehlgeschlagen: ' + msg); t.disabled = false; t.textContent = 'Verbinden';

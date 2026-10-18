@@ -709,6 +709,8 @@ function renderSettings(p) {
     <div class="card"><h3 class="sec">Geräte-Sync (GitHub)</h3>
       <p class="small muted">Bewertungen zwischen Handy, Mac und PC abgleichen (Branch „${esc(syncCfg.branch)}“). Derselbe Token wie bei Obiter geht.</p>
       <p class="small">Status: <span data-syncstate>${esc(syncLabel())}</span></p>
+      <p class="small">Ziel: <code>${esc(syncCfg.owner && syncCfg.repo ? `${syncCfg.owner}/${syncCfg.repo} → ${syncCfg.path}` : 'nicht eingerichtet')}</code></p>
+      ${!/\.github\.io$/.test(location.hostname) && syncCfg.repo && syncCfg.repo !== 'ClaudeWorkspace' ? `<p class="small warn">⚠️ Dieses Gerät speichert gerade im Freunde-Speicher statt in deinem Workspace. Für dich ist der Workspace richtig (so sehen Handy und Mac dieselben Daten).</p><button class="btn" data-act="syncreset">↩︎ Zurück auf meinen Workspace</button>` : ''}
       ${syncCfg.token ? `<div class="secret"><code id="tokShow">••••••••••••</code><button class="mini" data-act="showtok">👁 Anzeigen</button><button class="mini" data-act="copytok">Kopieren</button></div>` : ''}
       <input id="tok" class="input" placeholder="${syncCfg.token ? 'Neuen Token einfügen' : 'GitHub-Token (github_pat_…)'}" autocomplete="off" spellcheck="false">
       <div class="row2"><button class="btn" data-act="settok">Token speichern</button><button class="btn primary" data-act="syncnow" ${syncReady() ? '' : 'disabled'}>Jetzt synchronisieren</button></div>
@@ -805,6 +807,16 @@ document.addEventListener('click', async e => {
     case 'copytok': await tokenReady; return copyText(syncCfg.token, 'GitHub-Token');
     case 'settok': { const v = $('#tok')?.value || ''; if (!v.trim()) return; await setToken(v); toast('Token gespeichert'); renderSettings(page); syncNow(); return; }
     case 'syncnow': if (await syncNow()) toast('Synchronisiert ✓'); return;
+    case 'syncreset': {
+      if (!confirm('Sync wieder auf deinen Workspace (Brownyay/ClaudeWorkspace) umstellen? Deine Bewertungen auf diesem Gerät werden dort zusammengeführt. Den Workspace-Token musst du danach ggf. neu eintragen.')) return;
+      let prev = null; try { prev = JSON.parse(localStorage.getItem('kino.sync.prev')); } catch (_) { }
+      Object.assign(syncCfg, { owner: 'Brownyay', repo: 'ClaudeWorkspace', branch: 'kinokompass', path: 'kinokompass/filme.json', last: 0 });
+      // alten Workspace-Token wiederherstellen; der Freunde-Token passt nicht zum Workspace
+      if (prev?.token) await setToken(prev.token); else if (typeof frToken !== 'undefined' && syncCfg.token === frToken) await setToken('');
+      localStorage.removeItem('kino.sync.prev');
+      saveSyncCfg(); renderSettings(page); if (syncReady()) { await syncNow(); toast('↩︎ Zurück im Workspace – zusammengeführt ✓'); } else toast('Bitte jetzt deinen Workspace-Token eintragen (github_pat_… für ClaudeWorkspace)');
+      return;
+    }
     case 'export': return exportData();
     case 'reclist': recFilter = t.dataset.cat; closeAllPages(); return go('fuerdich');
     case 'settings': return openSettings();

@@ -317,17 +317,19 @@ async function saveOmdb(val) {
 }
 
 /* ─── QR-Code: zeigen (Mac) und scannen (Handy) ─── */
-async function qrPayload() {
-  await tokenReady;
-  return JSON.stringify({ kk: 1, tmdb: settings.apiKey, gh: syncCfg.token || '', omdb: settings.omdbKey || '', svc: settings.myServices, region: settings.region });
+// GitHub-Tokens (Workspace-Sync, Freunde) nur, wenn ausdrücklich für ein EIGENES Gerät gewünscht – ein Freund würde sonst als du auftreten
+async function qrPayload(withTokens) {
+  await tokenReady; await frTokenReady;
+  return JSON.stringify({ kk: 1, tmdb: settings.apiKey, omdb: settings.omdbKey || '', svc: settings.myServices, region: settings.region, ...(withTokens ? { gh: syncCfg.token || '', fr: frToken || '', frRepo: fr.repo || '' } : {}) });
 }
-async function openQrShow() {
-  const p = openPage('Einrichtung übertragen');
-  const qr = qrcode(0, 'L'); qr.addData(await qrPayload()); qr.make();
+async function openQrShow(withTokens = false) {
+  const p = pages.at(-1)?.qrShow ? pages.at(-1) : openPage('Einrichtung übertragen'); p.qrShow = true;
+  const qr = qrcode(0, 'L'); qr.addData(await qrPayload(withTokens)); qr.make();
   p.body.innerHTML = `<div class="qr-wrap">
-    <p><b>So geht's:</b> Am Handy Kinokompass öffnen → ⚙️ Einstellungen → „📷 QR-Code scannen“ (oder auf dem Startbildschirm) und diesen Code abfilmen.</p>
+    <p><b>So geht's:</b> Am anderen Gerät Kinokompass öffnen → ⚙️ Einstellungen → „📷 QR-Code scannen“ (oder auf dem Startbildschirm) und diesen Code abfilmen.</p>
     <div class="qr-box">${qr.createSvgTag({ cellSize: 6, margin: 4, scalable: true })}</div>
-    <p class="small warn">⚠️ Der Code enthält deine Schlüssel und deinen GitHub-Token. Nicht fotografieren oder teilen – nach dem Scannen diese Seite schließen.</p>
+    <label class="switch-row"><input type="checkbox" data-xact="qrtokens" ${withTokens ? 'checked' : ''}><span>Auch meine <b>GitHub-Tokens</b> übertragen (Sync & Freunde) – <b>nur für meine eigenen Geräte!</b></span></label>
+    <p class="small ${withTokens ? 'warn' : 'muted'}">${withTokens ? '⚠️ Enthält deine GitHub-Tokens: Wer diesen Code scannt, tritt als du auf und kann deine Daten ändern. Nur für dein eigenes Handy!' : 'Enthält nur Filmdatenbank-Schlüssel und Dienste – so kannst du ihn auch einem Freund zeigen. Er verbindet sich danach mit seinem eigenen GitHub-Token.'}</p>
   </div>`;
 }
 async function openQrScan() {
@@ -366,6 +368,7 @@ async function applyQr(cfg) {
   saveSettings();
   const ok = cfg.tmdb ? await testAndSaveKey(cfg.tmdb) : false;
   if (cfg.gh) { await setToken(cfg.gh); syncNow(true); }
+  if (cfg.fr && cfg.frRepo) { fr.repo = cfg.frRepo; saveFr(); await setFrToken(cfg.fr); fgh('/user').then(me => { if (me?.login) { fr.login = me.login; saveFr(); friendsSync(); } }).catch(() => { }); }
   closeAllPages(); render();
   toast(ok ? 'Alles übernommen ✓ – Bewertungen werden synchronisiert' : 'Übernommen, aber der TMDB-Schlüssel funktioniert nicht.');
 }
@@ -407,6 +410,7 @@ document.addEventListener('click', async e => {
     case 'omdbsave': { const val = $('#omdbIn')?.value || ''; if (val.trim() && await saveOmdb(val)) renderSettings(page); return; }
     case 'omdbshow': { const c = $('#omdbShow'); c.textContent = c.textContent.startsWith('•') ? settings.omdbKey : '••••••••'; return; }
     case 'qrshow': return openQrShow();
+    case 'qrtokens': return openQrShow(t.checked);
     case 'qrscan': return openQrScan();
   }
 });
