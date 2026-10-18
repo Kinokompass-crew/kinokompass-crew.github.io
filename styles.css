@@ -690,3 +690,8 @@ code { font-size: 12px; background: var(--bg2); padding: 1px 5px; border-radius:
 button.upd { width: 100%; text-align: left; }
 .who-am-i { font-size: 13px; border-color: rgba(56, 189, 248, .4); }
 .who-line { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: -4px 0 10px; } .who-line b { color: var(--text); } .who-line .mini:first-of-type { margin-left: auto; }
+
+/* Schnellmenü: Griff zum Wegwischen, Rückmeldung beim langen Drücken */
+.qm-sheet::before { content: ''; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: -4px auto 10px; }
+.lp-arm { transform: scale(.96); transition: transform .5s ease; }
+.lp-arm .poster { filter: brightness(.85); transition: filter .5s; }

@@ -115,13 +115,18 @@ async function fillCollection(p) {
 
 /* ─── Schnellmenü: lange drücken (Handy) bzw. Rechtsklick (Mac) auf ein Poster/eine Karte ─── */
 let lpTimer = 0, lpStart = null, lpFired = false;
+// Länger drücken (0,8 s), damit es nicht aus Versehen aufgeht; ab 0,3 s gibt das Element sichtbar nach
+let lpArm = 0, lpEl = null;
+const lpCancel = () => { clearTimeout(lpTimer); clearTimeout(lpArm); lpEl?.classList.remove('lp-arm'); lpEl = null; lpStart = null; };
 document.addEventListener('touchstart', e => {
-  const t = e.target.closest('[data-open]'); if (!t || e.touches.length > 1) return;
-  lpStart = { x: e.touches[0].clientX, y: e.touches[0].clientY }; lpFired = false;
-  lpTimer = setTimeout(() => { lpFired = true; vib('heavy'); openQuick(t.dataset.open); }, 520);
+  const t = e.target.closest('[data-open]'); if (!t || e.touches.length > 1 || e.target.closest('.qmenu')) return;
+  lpStart = { x: e.touches[0].clientX, y: e.touches[0].clientY }; lpFired = false; lpEl = t;
+  lpArm = setTimeout(() => t.classList.add('lp-arm'), 300);
+  lpTimer = setTimeout(() => { lpFired = true; t.classList.remove('lp-arm'); vib('heavy'); openQuick(t.dataset.open); }, 800);
 }, { passive: true });
-document.addEventListener('touchmove', e => { if (lpStart && Math.hypot(e.touches[0].clientX - lpStart.x, e.touches[0].clientY - lpStart.y) > 10) clearTimeout(lpTimer); }, { passive: true });
-document.addEventListener('touchend', () => { clearTimeout(lpTimer); lpStart = null; }, { passive: true });
+document.addEventListener('touchmove', e => { if (lpStart && Math.hypot(e.touches[0].clientX - lpStart.x, e.touches[0].clientY - lpStart.y) > 10) lpCancel(); }, { passive: true });
+document.addEventListener('touchend', lpCancel, { passive: true });
+document.addEventListener('touchcancel', lpCancel, { passive: true });
 document.addEventListener('click', e => { if (lpFired) { lpFired = false; e.stopPropagation(); e.preventDefault(); } }, true);
 document.addEventListener('contextmenu', e => { const t = e.target.closest('[data-open]'); if (!t) return; e.preventDefault(); openQuick(t.dataset.open); });
 async function openQuick(key) {
@@ -143,8 +148,13 @@ async function openQuick(key) {
   document.body.appendChild(m);
   requestAnimationFrame(() => m.classList.add('open'));
   fillAvail(m);
-  const close = () => { m.classList.remove('open'); setTimeout(() => m.remove(), 220); };
+  const close = () => { m.classList.remove('open'); const s = m.querySelector('.qm-sheet'); s.style.transform = ''; setTimeout(() => m.remove(), 220); };
   m.querySelector('.qm-bg').onclick = close;
+  // Nach unten wischen schließt das Menü
+  const sheet = m.querySelector('.qm-sheet'); let sy = null, dy = 0;
+  sheet.addEventListener('touchstart', e => { sy = e.touches[0].clientY; dy = 0; sheet.style.transition = 'none'; }, { passive: true });
+  sheet.addEventListener('touchmove', e => { if (sy == null) return; dy = Math.max(0, e.touches[0].clientY - sy); if (dy > 4) { e.preventDefault(); sheet.style.transform = `translateY(${dy}px)`; } }, { passive: false });
+  sheet.addEventListener('touchend', () => { sheet.style.transition = ''; if (dy > 70) { vib(); close(); } else sheet.style.transform = ''; sy = null; });
   // Trailer und „Schauen“ erst zeigen, wenn bekannt
   getAvail(key).then(av => { if (av?.mine.length) { const btn = m.querySelector('[data-q="play"]'); btn.hidden = false; btn.textContent = `▶ Bei ${av.mine[0].name} schauen`; btn.dataset.svc = av.mine[0].key; } });
   details(parseKey(key).kind, parseKey(key).id).then(d => { known.set(key, { ...b, ...d }); if (d.trailer) m.querySelector('[data-q="trailer"]').hidden = false; }).catch(() => { });

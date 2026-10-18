@@ -463,8 +463,11 @@ function itemRow(f, live) {
 async function openItem(key) {
   const pre = lookup(key);
   const flying = !!(pre && flipSrc && Date.now() - flipSrc.at < 800 && !reducedMotion());
+  // Immer nur EINE Detailseite: vorherige (z. B. Arcane → Der Pate) wird ersetzt, „zurück“ führt direkt zur Liste
+  const older = pages.filter(x => x.key);
   const p = openPage(pre?.title || '', { cls: 'detail-page', fade: flying });
   p.key = key;
+  if (older.length) setTimeout(() => older.forEach(o => { const i = pages.indexOf(o); if (i >= 0) { pages.splice(i, 1); o.el.remove(); } }), 340);
   p.body.innerHTML = `<div class="detail">${pre ? heroHtml(pre) : ''}${skeleton(1)}</div>`;
   if (flying) flipInto(p); else flipSrc = null;
   try {
